@@ -42,7 +42,10 @@ if __name__ == "__main__":
     players = load_players()
 
     num_workers = psutil.cpu_count(logical=True)
-    games_per_worker = games_per_match // num_workers
+    if num_workers == None or num_workers < 1:
+        num_workers = 1
+    
+    games_per_worker = int(games_per_match) // num_workers
     num_players = len(players)
     total_matches = (num_players * (num_players + 1)) // 2
 
@@ -60,10 +63,10 @@ if __name__ == "__main__":
 
     print("\n=== Knucklebones Tournament Results ===")
     for pid, stats in leaderboard:
-        total_games = stats["wins"] + stats["losses"] + stats["ties"]
-        winrate = stats["wins"] / total_games * 100 if total_games else 0
-        error_rate = stats["errors"] / total_games * 100 if total_games else 0
-        avg_score = stats["score"]/total_games if total_games else 0
+        total_games = int(stats["wins"]) + int(stats["losses"]) + int(stats["ties"])
+        winrate = int(stats["wins"]) / total_games * 100 if total_games else 0
+        error_rate = int(stats["errors"]) / total_games * 100 if total_games else 0
+        avg_score = int(stats["score"]) / total_games if total_games else 0
         print(f"{stats['name']:12} | Wins: {stats['wins']:3} | Losses: {stats['losses']:3} "
               f"| Ties: {stats['ties']:3} | Avg Score: {avg_score:.1f} "
               f"| Winrate: {winrate:.1f}% | Error Rate: {error_rate:.1f}%")
