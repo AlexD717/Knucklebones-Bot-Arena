@@ -98,12 +98,11 @@ def play_game(p1: Player, p2: Player):
 
 def run_tournament(players, games_per_match=1000):
     results = {p.id: {"name": p.name, "wins":0, "losses":0, "ties":0, "errors":0, "score":0} for p in players}
-    numPlayers = len(players)
-    totalMatches = (numPlayers * (numPlayers + 1)) // 2
-    totalGames = totalMatches * games_per_match
-    print(f"Running tournament with {len(players)} players, {totalMatches} matches, {games_per_match} games each ({totalGames} total games)...")
-    percentageStep = 100 / totalGames
-    currentPercentage = 0.0
+    num_players = len(players)
+    total_matches = (num_players * (num_players + 1)) // 2
+    total_games = total_matches * games_per_match
+    percentage_step = 100 / total_games
+    current_percentage = 0.0
 
     for i in range(len(players)):
         for j in range(i, len(players)):
@@ -125,6 +124,6 @@ def run_tournament(players, games_per_match=1000):
                     results[p2.id]["errors"] += 1
                 results[p1.id]["score"] += s0
                 results[p2.id]["score"] += s1
-                currentPercentage += percentageStep
-                print(f"Tournament progress: {currentPercentage:.2f}%", end="\r")
+                current_percentage += percentage_step
+                print(f"Tournament progress: {current_percentage:.2f}%", end="\r")
     return results

@@ -1,7 +1,12 @@
+from engine import Player, run_tournament
 import pkgutil
 import inspect
 import importlib
-from engine import Player, run_tournament
+import multiprocessing
+import psutil
+from collections import defaultdict
+
+games_per_match = 10000
 
 def load_players():
     players = []
@@ -17,15 +22,44 @@ def load_players():
                 players.append(obj())  # instantiate with default name
     return players
 
+def worker(players, games):
+    return run_tournament(players, games)
+
+def merge_results(results_list):
+    merged = defaultdict(lambda: {"wins":0, "losses":0, "ties":0, "errors":0, "score":0, "name":""})
+    for result in results_list:
+        for pid, stats in result.items():
+            if not merged[pid]["name"]:
+                merged[pid]["name"] = stats["name"]
+            merged[pid]["wins"]   += stats["wins"]
+            merged[pid]["losses"] += stats["losses"]
+            merged[pid]["ties"]   += stats["ties"]
+            merged[pid]["errors"] += stats["errors"]
+            merged[pid]["score"]  += stats["score"]
+    return merged
+
 if __name__ == "__main__":
     players = load_players()
-    results = run_tournament(players, games_per_match=10000)
-    
+
+    num_workers = psutil.cpu_count(logical=True)
+    games_per_worker = games_per_match // num_workers
+    num_players = len(players)
+    total_matches = (num_players * (num_players + 1)) // 2
+
+    print(f"Running tournament with {len(players)} players, {total_matches} matches, {games_per_match} games each ({total_matches*games_per_match} total games)...")
+    print(f"Running tournament with {num_workers} workers...")
+
+    with multiprocessing.Pool(num_workers) as pool:
+        results_list = pool.starmap(worker, [(players, games_per_worker) for _ in range(num_workers)])
+
+    # merge all worker results
+    results = merge_results(results_list)
+
     # sort leaderboard by wins
     leaderboard = sorted(results.items(), key=lambda x: x[1]["wins"], reverse=True)
-    
+
     print("\n=== Knucklebones Tournament Results ===")
-    for id, stats in leaderboard:
+    for pid, stats in leaderboard:
         total_games = stats["wins"] + stats["losses"] + stats["ties"]
         winrate = stats["wins"] / total_games * 100 if total_games else 0
         error_rate = stats["errors"] / total_games * 100 if total_games else 0
